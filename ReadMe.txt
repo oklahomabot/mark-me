@@ -5,3 +5,5 @@ Processed pictures with watermark will be stored in the 'finishedpics' folder
 This program is designed for the windows file system
 
 This is a final project for the Udemy course "https://www.udemy.com/course/complete-python-bootcamp/"
+
+added to github user oklahomabot/mark-me 20210110
