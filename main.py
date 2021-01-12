@@ -339,11 +339,11 @@ def get_user_options(options):
                     choice=select_from_list(output_options,'Select Output Option')
                     if not (choice == 'EMPTY' or choice == 'CANCEL'):
                         if choice==output_options[0]: #'DISPLAY ONLY'
-                            options[3]=False
-                            options[4]=True
-                        elif choice==output_options[1]: #SAVE ONLY
                             options[3]=True
                             options[4]=False
+                        elif choice==output_options[1]: #SAVE ONLY
+                            options[3]=False
+                            options[4]=True
                         elif choice==output_options[2]: #SAVE AND DISPLAY
                             options[3]=True
                             options[4]=True
