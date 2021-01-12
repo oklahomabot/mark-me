@@ -169,6 +169,7 @@ def prerequisites_met():
         folder_path = os.path.join(base_path,folder_name)
         file_dic[folder_name]=[]
         
+    '''
         #Adds filenames to file_dic if file extention is in [image_types]
         for f in filter(lambda f:f.split('.')[1] in image_types, os.listdir(folder_path)):
             file_dic[folder_name].append(f)
@@ -178,7 +179,7 @@ def prerequisites_met():
             print(f'Folder {folder_name} does not contain an image file with one of these compatible extensions')
             print(f'{image_types}')
             return False
-    
+    '''
     return complete
 
 def select_from_list(my_list,description='Enter the item number '):
@@ -380,6 +381,51 @@ def get_user_options(options):
                             
     return options
 
+def choose_logo():
+    '''
+    Allows user to select desired logo image. If only one it is chosen automatically
+    Uses a filepath of current + logo_folder_name (global)
+    Returns the filename of the image selected, 'CANCEL' or 'EMPTY'
+    '''
+    
+    done=False
+    while not done:
+        #populate file dictionary for all folders
+        for folder_name in folders_required:
+            folder_path = os.path.join(base_path,folder_name)
+            file_dic[folder_name]=[]
+
+            #Adds filenames to file_dic if file extention is in [image_types]
+            for f in filter(lambda f:f.split('.')[1] in image_types, os.listdir(folder_path)):
+                file_dic[folder_name].append(f)
+                
+        
+        #Insert Check for file existing in Logo and selection
+        #Method for cancelling by user or automatic selection if only one file
+        print(f'len(file_dic(logo_folder_name) = {len(file_dic[logo_folder_name])}')
+        
+        #NO FILES IN LOGO
+        #USER CHOOSE, Try again or quit
+        source_logo = select_from_list(file_dic[logo_folder_name],'Choose a logo ')
+        if source_logo == 'EMPTY':
+            print('There are 0 files in your logo folder. It is required that you have at least one logo image of a compatible filetype.')
+            print(f'Compatible filetypes are : {image_types}')
+            print(f'The folder to store logos is located at {os.path.join(base_path,logo_folder_name)}')
+            choice = input('Would you like to put an image there and try again?')
+            try:
+                if choice[0].lower()!='y':
+                    done=True
+            except:
+                done=True
+                
+        #ONE FILE IN LOGO
+        elif len(file_dic[logo_folder_name]) == 1:
+            print(f'{source_logo} chosen automatically because there is only one compatible image in logo folder.')
+            done = True
+        else:
+            done = True
+    return source_logo
+
 #MAiN
 base_path = Path.cwd()
 folders_required = ['logos','originalpics','watermarks','finishedpics']
@@ -392,30 +438,31 @@ user_options = []
 pattern_dic = construct_pattern_dic()
 
 source_logo = ''
-game_over = False
+keep_going = True
 
 #Must be an element of [image_required]
 source_folder_name = 'originalpics'
 logo_folder_name = 'logos'
 
 
-
 #TEST CODE
-
-if prerequisites_met():
-    source_logo = select_from_list(file_dic[logo_folder_name],'Choose a logo ')
-    if source_logo == 'EMPTY':
-        print(f'ERROR : NO LOGOS IN FOLDER {logo_folder_name}')
-    elif source_logo != 'CANCEL':
+while keep_going:
+    prerequisites_met()
+    source_logo = choose_logo()
+    if source_logo not in ['EMPTY','CANCEL']:
         user_options = get_user_options(user_options)
-        #print(f'Processing using user_options = {user_options}')
+        print(f'Processing using user_options = {user_options}')
         process_pictures(pattern=user_options[0],show=user_options[3],save=user_options[4],lalpha=user_options[1],fr=user_options[5])
-else:
-    print('NOT READY - All Prerequisites Not Met')
+    
+    choice = input('Make more images? ')
+    try:
+        if choice[0].lower()!='y':
+            keep_going=True
+        else:
+            keep_going=True
+    except:
+        keep_going=False
 
-print('END PROGRAM ---- GOODBYE')
+print('EXITING PROGRAM')
 
-
-#logo transparency option instead of default = 50
-#Toggle for wallpaper only? --- no merging
-#Create a preview for user approval?
+#Toggle for wallpaper only?
