@@ -142,13 +142,26 @@ def make_transparent(im,alpha_value=50):
     
     return image
 
-def prerequisites_met():
+def populate_filenames(f_dic,dir_list,allowed):
     '''
-    This function checks the prerequisites are met and returns a boolean
-    - Compares the folder names in current directory and creates these
-    folders if missing based on [folders_required]
-    - [image_required] folders require at least one file of [image_types]
-    - Populates global dictionary of image filenames by folder name
+    f_dic : dictionary where key is string directory name
+    dir_list : string list of required directories (at cwd level)
+    allowed : string list of compatible file extensions
+    '''
+    for folder_name in dir_list:
+        folder_path = os.path.join(base_path,folder_name)
+        f_dic[folder_name]=[]
+        
+        #Adds filenames to file_dic if file extention is in [image_types]
+        for f in filter(lambda f:f.split('.')[1] in allowed, os.listdir(folder_path)):
+            f_dic[folder_name].append(f)  
+
+
+
+def get_files(f_dic,dir_list,allowed):
+    '''
+    This function checks the prerequisite folders exist, creating them
+    if missing.
     '''
 
     complete=True
@@ -156,39 +169,28 @@ def prerequisites_met():
     existing_folders = os.listdir(base_path)
     
     #Check that all required folders exist
-    if all(item in existing_folders for item in folders_required) == False:
+    if all(item in existing_folders for item in dir_list) == False:
         
         #Create missing folders
-        missing = list(set(folders_required)-set(existing_folders))
+        missing = list(set(dir_list)-set(existing_folders))
         print(f'We are missing these folders {missing}')
         for item in missing:
             print(f'Creating a folder named {item}')
             os.makedirs(os.path.join(base_path, item))
     
-    for folder_name in image_required:
-        folder_path = os.path.join(base_path,folder_name)
-        file_dic[folder_name]=[]
+    populate_filenames(f_dic,dir_list,allowed)
         
-    '''
-        #Adds filenames to file_dic if file extention is in [image_types]
-        for f in filter(lambda f:f.split('.')[1] in image_types, os.listdir(folder_path)):
-            file_dic[folder_name].append(f)
-        
-        #Empty list of files indicates no valid files
-        if not file_dic[folder_name]:
-            print(f'Folder {folder_name} does not contain an image file with one of these compatible extensions')
-            print(f'{image_types}')
-            return False
-    '''
-    return complete
 
-def select_from_list(my_list,description='Enter the item number '):
+
+def select_from_list(my_list,description='Enter the item number ',clear=True):
     '''
     Returns value of the item the user selects
     If there is only one item it is chosen
     'CANCEL' is returned if user cancels, 'EMPTY' if the list is empty
     '''    
-    os.system('cls' if os.name == 'nt' else 'clear')
+    if clear:
+        os.system('cls' if os.name == 'nt' else 'clear')
+
     choice=''
     length = len(my_list)
     
@@ -296,7 +298,7 @@ def get_user_options(options):
     finished=False
     
     if len(options) == 0:
-        options = default_options
+        options = default_options.copy()
     
     while finished == False:
         #Display Current Setting for User
@@ -311,6 +313,7 @@ def get_user_options(options):
             temp=output_options[3]
 
         print('==== CURRENT SETTINGS ====')
+        print(f'Logo Chosen : {source_logo}\tNumber of files in {source_folder_name} : {len(file_dic[source_folder_name])}')
         print(f'Logo Pattern : {options[0]}\t Output : {temp}\tLogo Chosen : {source_logo}')
         print(f'Advanced Options : ',end="")
         if options[1]==default_options[1] and options[2]==default_options[2] and options[5]==default_options[5]:
@@ -318,67 +321,69 @@ def get_user_options(options):
         else:
             print('CUSTOM')
         print('==========================')
-        temp = input('Change Options? (ENTER TO PROCESS ALL IMAGES)')
-        if temp=='':
-            temp='no'
+
+        #EDIT OPTIONS?
+        try:
+            choice = input('EDIT OPTIONS? ')
+            if choice[0].lower()=='y':
+                #User selections option to change
+                choice=select_from_list(option_categories,'Select Option to Edit : ',clear=False)
+                if choice not in ['EMPTY','CANCEL']:
+                    if choice==option_categories[0]:
+                        options = default_options.copy()
+                        print(options,default_options)
+                    elif choice=='Logo Pattern':
+                        choice=select_from_list(list(pattern_dic.keys()),'Select Pattern')
+                        if not (choice == 'EMPTY' or choice == 'CANCEL'):
+                            options[0]=choice
+                    elif choice=='Output Mode':
+                        choice=select_from_list(output_options,'Select Output Option')
+                        if not (choice == 'EMPTY' or choice == 'CANCEL'):
+                            if choice==output_options[0]: #'DISPLAY ONLY'
+                                options[3]=True
+                                options[4]=False
+                            elif choice==output_options[1]: #SAVE ONLY
+                                options[3]=False
+                                options[4]=True
+                            elif choice==output_options[2]: #SAVE AND DISPLAY
+                                options[3]=True
+                                options[4]=True
+                            else:                           #NO OUTPUT
+                                options[3]=False
+                                options[4]=False
+                    elif choice=='(Advanced) Wallpaper : ':
+                        print(choice)
+                        choice=input('Enter Yes for Wallpaper (Logo on white background only) : ')
+                        if choice!='':
+                            if choice[0].lower()=='y':
+                                options[2]=True
+                            else:
+                                options[2]=False
+                    elif choice=='(Advanced) LogoAlphaValue : ':
+                        print(choice)
+                        print('Transparency of Logo before merging : ')
+                        #adjust alpha component of logo in make_transparent()
+                        try:
+                            choice=float(input('Enter value 1 to 10 (very light=1 --> 10=opaque) : '))
+                            if (choice>=0 and choice<=10):
+                                options[1]=int(choice*25.5)
+                        except:
+                            options[1]=default_options[1]
+                    elif choice==option_categories[5]:
+                        print(choice)
+                        print('This option replaces the default logo size ratio with respect to the picture being merged to')
+                        print("Enter a value of 10-100: ","end=''")
+                        try:
+                            choice=float(input("100 is forcing logo the min of final picture's length or width"))
+                            if (choice>=10 and choice<=100):
+                                options[5]=choice/100
+                        except:
+                            options[5]=default_options[5]
+            else:
+                finished=True
+        except:
             finished=True
 
-        elif temp[0].lower()=='y':
-            print('CHANGING OPTIONS!')
-
-            #INSERT CHOICE OF OPTIONS TO CHANGE
-            choice=select_from_list(option_categories,'Select Option to Edit : ')
-            if choice not in ['EMPTY','CANCEL']:
-                if choice=='RESTORE DEFAULT VALUES':
-                    options = default_options
-                elif choice=='Logo Pattern':
-                    choice=select_from_list(list(pattern_dic.keys()),'Select Pattern')
-                    if not (choice == 'EMPTY' or choice == 'CANCEL'):
-                        options[0]=choice
-                elif choice=='Output Mode':
-                    choice=select_from_list(output_options,'Select Output Option')
-                    if not (choice == 'EMPTY' or choice == 'CANCEL'):
-                        if choice==output_options[0]: #'DISPLAY ONLY'
-                            options[3]=True
-                            options[4]=False
-                        elif choice==output_options[1]: #SAVE ONLY
-                            options[3]=False
-                            options[4]=True
-                        elif choice==output_options[2]: #SAVE AND DISPLAY
-                            options[3]=True
-                            options[4]=True
-                        else:                           #NO OUTPUT
-                            options[3]=False
-                            options[4]=False
-                elif choice=='(Advanced) Wallpaper : ':
-                    print(choice)
-                    choice=input('Enter Yes for Wallpaper (Logo on white background only) : ')
-                    if choice!='':
-                        if choice[0].lower()=='y':
-                            options[2]=True
-                        else:
-                            options[2]=False
-                elif choice=='(Advanced) LogoAlphaValue : ':
-                    print(choice)
-                    print('Transparency of Logo before merging : ')
-                    #adjust alpha component of logo in make_transparent()
-                    try:
-                        choice=float(input('Enter value 1 to 10 (very light=1 --> 10=opaque) : '))
-                        if (choice>=0 and choice<=10):
-                            options[1]=int(choice*25.5)
-                    except:
-                        options[1]=default_options[1]
-                elif choice==option_categories[5]:
-                    print(choice)
-                    print('This option replaces the default logo size ratio with respect to the picture being merged to')
-                    print("Enter a value of 10-100: ","end=''")
-                    try:
-                        choice=float(input("100 is forcing logo the min of final picture's length or width"))
-                        if (choice>=10 and choice<=100):
-                            options[5]=choice/100
-                    except:
-                        options[5]=default_options[5]
-                            
     return options
 
 def choose_logo():
@@ -391,22 +396,16 @@ def choose_logo():
     done=False
     while not done:
         #populate file dictionary for all folders
-        for folder_name in folders_required:
-            folder_path = os.path.join(base_path,folder_name)
-            file_dic[folder_name]=[]
+        populate_filenames(file_dic,folders_required,image_types)
 
-            #Adds filenames to file_dic if file extention is in [image_types]
-            for f in filter(lambda f:f.split('.')[1] in image_types, os.listdir(folder_path)):
-                file_dic[folder_name].append(f)
-                
-        
-        #Insert Check for file existing in Logo and selection
-        #Method for cancelling by user or automatic selection if only one file
         print(f'len(file_dic(logo_folder_name) = {len(file_dic[logo_folder_name])}')
         
-        #NO FILES IN LOGO
-        #USER CHOOSE, Try again or quit
         source_logo = select_from_list(file_dic[logo_folder_name],'Choose a logo ')
+        
+        if len(file_dic[logo_folder_name]) == 1:
+            print(f'{source_logo} chosen automatically because there is only one compatible image in logo folder.')
+            done = True
+
         if source_logo == 'EMPTY':
             print('There are 0 files in your logo folder. It is required that you have at least one logo image of a compatible filetype.')
             print(f'Compatible filetypes are : {image_types}')
@@ -415,20 +414,24 @@ def choose_logo():
             try:
                 if choice[0].lower()!='y':
                     done=True
+                else:
+                    done=False
             except:
                 done=True
-                
-        #ONE FILE IN LOGO
-        elif len(file_dic[logo_folder_name]) == 1:
-            print(f'{source_logo} chosen automatically because there is only one compatible image in logo folder.')
-            done = True
-        else:
-            done = True
+
+        elif source_logo == 'CANCEL':
+            try:
+                choice = input('You have not chosen a logo. Are you sure you want to EXIT? ')
+                if choice[0].lower()!='n':
+                    done = True
+            except:
+                done = True
+
     return source_logo
 
 #MAiN
 base_path = Path.cwd()
-folders_required = ['logos','originalpics','watermarks','finishedpics']
+folders_required = ['logos','originalpics','finishedpics']
 image_required = ['logos','originalpics']
 image_types = ['jpg','png','bmp']
 file_dic = {}
@@ -446,23 +449,28 @@ logo_folder_name = 'logos'
 
 
 #TEST CODE
+get_files(file_dic,folders_required,image_types)
+
 while keep_going:
-    prerequisites_met()
+
     source_logo = choose_logo()
-    if source_logo not in ['EMPTY','CANCEL']:
+    if source_logo in ['EMPTY','CANCEL']:
+        keep_going = False
+    else:
         user_options = get_user_options(user_options)
+        
         print(f'Processing using user_options = {user_options}')
         process_pictures(pattern=user_options[0],show=user_options[3],save=user_options[4],lalpha=user_options[1],fr=user_options[5])
     
-    choice = input('Make more images? ')
-    try:
-        if choice[0].lower()!='y':
-            keep_going=True
-        else:
+        choice = input('Make more images? ')
+        try:
+            if choice[0].lower()=='y':
+                keep_going=True
+            else:
+                keep_going=False
+        except:
             keep_going=False
-    except:
-        keep_going=False
 
-print('EXITING PROGRAM')
+print('PROGRAM TERMINATED')
 
 #Toggle for wallpaper only?
