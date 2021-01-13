@@ -328,7 +328,7 @@ def get_user_options(options):
 
             #INSERT CHOICE OF OPTIONS TO CHANGE
             choice=select_from_list(option_categories,'Select Option to Edit : ')
-            if not (choice == 'EMPTY' or choice == 'CANCEL'):
+            if choice not in ['EMPTY','CANCEL']:
                 if choice=='RESTORE DEFAULT VALUES':
                     options = default_options
                 elif choice=='Logo Pattern':
@@ -459,7 +459,7 @@ while keep_going:
         if choice[0].lower()!='y':
             keep_going=True
         else:
-            keep_going=True
+            keep_going=False
     except:
         keep_going=False
 
