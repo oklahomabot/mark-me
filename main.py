@@ -120,20 +120,17 @@ def make_transparent(im,alpha_value=50):
     alpha_value optional transparency of non-white pixles
     '''
     image=im
-    #print(f'original image mode = {image.mode}\timage.info\t{image.info}')
     
     #We can see that this is a file of PIL.Image.Image data type, and the mode of this file is “RGB”
     #To make the image background transparent, we first need to change “RGB” to “RGBA”
     if image.mode != 'RGBA':
         image = image.convert('RGBA')
-        #print(f'converted to RGBA image mode = {image.mode}\timage.info\t{image.info}')
     
     # Transparency
     newImage = []
     for item in image.getdata():
-        #My IF .. TESTING making 'near white' pixels transparent
+        #making 'near white' pixels transparent
         if item[0] >= 220:
-        #if item[:3] == (255, 255, 255):
             newImage.append((255, 255, 255, 0))
         else:
             newImage.append((item[0],item[1],item[2],alpha_value))
@@ -209,7 +206,7 @@ def select_from_list(my_list,description='Enter the item number '):
             return 'CANCEL'
     return (my_list[choice-1])
     
-def output_pic(im,im_name,folder_name,show=False,save=False):
+def output_pic(im,im_name,folder_name,show=False,save=False,wall=False):
     '''
     This takes in image, im_name (str) and a folder_name (str)
 
@@ -218,25 +215,30 @@ def output_pic(im,im_name,folder_name,show=False,save=False):
     This folder is in same dir level as this program
 
     show (optional) displays output file using default program
+    wall (optional) wallpaper images output as .png
 
     '''
     name_parts = im_name.split('.')
-    new_name = name_parts[0] + '-w.' + name_parts[1]
+    
+    if wall:
+        new_name = name_parts[0] + '-w.png'
+    else:
+        new_name = name_parts[0] + '-m.' + name_parts[1]
         
     f_path = base_path.joinpath(folder_name,new_name)
 
     if show:
-        #print(f'Displaying File :\t{f_path}')
         im.show()
     if save:
         print(f'Saving File :\t{f_path}')
         
         #RGBA need to be converted to RGB type for .jpg
-        if name_parts[1] == 'jpg':
+        if name_parts[1] == 'jpg' and wall==False:
             im = im.convert('RGB')
+        
         im.save(f_path)
     
-def process_pictures(pattern='Top-Left',show=False,save=True,lalpha=50,fr=-1):
+def process_pictures(pattern='Top-Left',show=False,save=True,lalpha=50,fr=-1,wall=False):
     
     if show:
         print(f'Displaying {len(file_dic[source_folder_name])} image(s) using your default program.')
@@ -249,7 +251,6 @@ def process_pictures(pattern='Top-Left',show=False,save=True,lalpha=50,fr=-1):
     logo = make_transparent(logo,lalpha)
     
     for item in file_dic[source_folder_name]:
-        #print(f'Processing file : Merging {source_logo} with {item}')
         
         orig_path = base_path.joinpath(source_folder_name,item)
         orig_pic = Image.open(orig_path)
@@ -264,6 +265,11 @@ def process_pictures(pattern='Top-Left',show=False,save=True,lalpha=50,fr=-1):
         final_pic = Image.alpha_composite(orig_pic,logo_sheet)
 
         output_pic(final_pic,item,'finishedpics',show,save)
+        
+    #process Wallpaper if selected (500,500) size is default
+    if wall:
+        wallimage=final_background(logo,(500,500),pattern,force_ratio=user_options[5])
+        output_pic(wallimage,source_logo,'finishedpics',show,save,wall=True)
         
 def construct_pattern_dic():
     #Creates pattern dictionary and assigned default logo ratios
@@ -288,9 +294,8 @@ def construct_pattern_dic():
 
 def get_user_options(options):
     #pattern,logoalpha,wallpaper,display,save,forcesize
-    import inspect
-    from IPython.display import clear_output
-    
+    #This function gets user input and changes program options
+
     choice=''
     temp=''
     option_categories = ['RESTORE DEFAULT VALUES','Logo Pattern','Output Mode','(Advanced) Wallpaper : ']
@@ -302,12 +307,8 @@ def get_user_options(options):
         options = default_options.copy()
     
     while finished == False:
-        
-        source = inspect.getfile(inspect.currentframe())
-        if '.py' in source:
-            os.system('cls' if os.name == 'nt' else 'clear')
-        elif 'ipython' in source:
-            clear_output()
+
+        os.system('cls' if os.name == 'nt' else 'clear')
         
         if options[4] and options[3]:
             temp=output_options[2]
@@ -321,8 +322,8 @@ def get_user_options(options):
         print('==== CURRENT SETTINGS ====')
         print(f'Logo Chosen : {source_logo}\tNumber of files in {source_folder_name} : {len(file_dic[source_folder_name])}')
         print(f'Pattern : {options[0]}\t\tOutput : {temp}')
-        print(f'Wallpaper Only : {options[2]}\t\tAdvanced Options : ',end="")
-        if options[1]==default_options[1] and options[2]==default_options[2] and options[5]==default_options[5]:
+        print(f'Wallpaper : {options[2]}\t\tAdvanced Options : ',end="")
+        if options[1]==default_options[1] and options[5]==default_options[5]:
             print('standard')
         else:
             print('CUSTOM')
@@ -367,7 +368,7 @@ def get_user_options(options):
                                 options[2]=False
                     elif choice=='(Advanced) LogoAlphaValue : ':
                         print(choice)
-                        print('Transparency of Logo before merging : ')
+                        print(f'Transparency of Logo before merging ({options[1]/25.5:.1f}) ')
                         #adjust alpha component of logo in make_transparent()
                         try:
                             choice=float(input('Enter value 1 to 10 (very light=1 --> 10=opaque) : '))
@@ -378,9 +379,10 @@ def get_user_options(options):
                     elif choice==option_categories[5]:
                         print(choice)
                         print('This option replaces the default logo size ratio with respect to the picture being merged to')
+                        print('This value is usually dependent on the pattern chosen.')
                         print("Enter a value of 10-100: ",end='')
                         try:
-                            choice=float(input("100 is forcing logo the min of final picture's length or width"))
+                            choice=float(input("100 is forcing logo to maximum size : "))
                             if (choice>=10 and choice<=100):
                                 options[5]=choice/100
                         except:
@@ -438,7 +440,6 @@ def choose_logo():
 #MAiN
 base_path = Path.cwd()
 folders_required = ['logos','originalpics','finishedpics']
-image_required = ['logos','originalpics']
 image_types = ['jpg','png','bmp']
 file_dic = {}
 default_options = ['Top-Left',50,False,False,True,-1]
@@ -449,7 +450,7 @@ pattern_dic = construct_pattern_dic()
 source_logo = ''
 keep_going = True
 
-#Must be an element of [image_required]
+#Must be an element of [folders_required]
 source_folder_name = 'originalpics'
 logo_folder_name = 'logos'
 
@@ -465,8 +466,7 @@ while keep_going:
     else:
         user_options = get_user_options(user_options)
         
-        #print(f'Processing using user_options = {user_options}')
-        process_pictures(pattern=user_options[0],show=user_options[3],save=user_options[4],lalpha=user_options[1],fr=user_options[5])
+        process_pictures(pattern=user_options[0],show=user_options[3],save=user_options[4],lalpha=user_options[1],fr=user_options[5],wall=user_options[2])
     
         choice = input('Make more images? ')
         try:
@@ -478,5 +478,3 @@ while keep_going:
             keep_going=False
 
 print('PROGRAM TERMINATED')
-
-#Toggle for wallpaper only?
