@@ -182,14 +182,12 @@ def get_files(f_dic,dir_list,allowed):
         
 
 
-def select_from_list(my_list,description='Enter the item number ',clear=True):
+def select_from_list(my_list,description='Enter the item number '):
     '''
     Returns value of the item the user selects
     If there is only one item it is chosen
     'CANCEL' is returned if user cancels, 'EMPTY' if the list is empty
     '''    
-    if clear:
-        os.system('cls' if os.name == 'nt' else 'clear')
 
     choice=''
     length = len(my_list)
@@ -290,6 +288,9 @@ def construct_pattern_dic():
 
 def get_user_options(options):
     #pattern,logoalpha,wallpaper,display,save,forcesize
+    import inspect
+    from IPython.display import clear_output
+    
     choice=''
     temp=''
     option_categories = ['RESTORE DEFAULT VALUES','Logo Pattern','Output Mode','(Advanced) Wallpaper : ']
@@ -301,8 +302,13 @@ def get_user_options(options):
         options = default_options.copy()
     
     while finished == False:
-        #Display Current Setting for User
-        os.system('cls' if os.name == 'nt' else 'clear')
+        
+        source = inspect.getfile(inspect.currentframe())
+        if '.py' in source:
+            os.system('cls' if os.name == 'nt' else 'clear')
+        elif 'ipython' in source:
+            clear_output()
+        
         if options[4] and options[3]:
             temp=output_options[2]
         elif options[4]:
@@ -314,8 +320,8 @@ def get_user_options(options):
 
         print('==== CURRENT SETTINGS ====')
         print(f'Logo Chosen : {source_logo}\tNumber of files in {source_folder_name} : {len(file_dic[source_folder_name])}')
-        print(f'Logo Pattern : {options[0]}\t Output : {temp}\tLogo Chosen : {source_logo}')
-        print(f'Advanced Options : ',end="")
+        print(f'Pattern : {options[0]}\t\tOutput : {temp}')
+        print(f'Wallpaper Only : {options[2]}\t\tAdvanced Options : ',end="")
         if options[1]==default_options[1] and options[2]==default_options[2] and options[5]==default_options[5]:
             print('standard')
         else:
@@ -327,7 +333,7 @@ def get_user_options(options):
             choice = input('EDIT OPTIONS? ')
             if choice[0].lower()=='y':
                 #User selections option to change
-                choice=select_from_list(option_categories,'Select Option to Edit : ',clear=False)
+                choice=select_from_list(option_categories,'Select Option to Edit : ')
                 if choice not in ['EMPTY','CANCEL']:
                     if choice==option_categories[0]:
                         options = default_options.copy()
@@ -372,7 +378,7 @@ def get_user_options(options):
                     elif choice==option_categories[5]:
                         print(choice)
                         print('This option replaces the default logo size ratio with respect to the picture being merged to')
-                        print("Enter a value of 10-100: ","end=''")
+                        print("Enter a value of 10-100: ",end='')
                         try:
                             choice=float(input("100 is forcing logo the min of final picture's length or width"))
                             if (choice>=10 and choice<=100):
@@ -459,7 +465,7 @@ while keep_going:
     else:
         user_options = get_user_options(user_options)
         
-        print(f'Processing using user_options = {user_options}')
+        #print(f'Processing using user_options = {user_options}')
         process_pictures(pattern=user_options[0],show=user_options[3],save=user_options[4],lalpha=user_options[1],fr=user_options[5])
     
         choice = input('Make more images? ')
