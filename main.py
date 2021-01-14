@@ -54,7 +54,7 @@ def get_cords(pattern_id, slogosize, background_size):
             cord_list.extend(get_cords(item,slogosize,background_size))
     elif pattern_id == '4x4full':
 
-        x_list = [0,int(3*b_X/8-small_halfX),int(5*b_X/8-small_halfX),b_X-small_X]
+        x_list = [0,int((b_X-small_X)/3),int((b_X-small_X)*0.66),b_X-small_X]
         y_list = [int(3*b_Y/8-small_halfY),int(5*b_Y/8-small_halfY)]
         
         cord_list = get_cords('4x4ring',slogosize,background_size)
@@ -65,7 +65,7 @@ def get_cords(pattern_id, slogosize, background_size):
         
     elif pattern_id == '4x4ring':
         #Top-Bottom
-        x_list = [0,int(3*b_X/8-small_halfX),int(5*b_X/8-small_halfX),b_X-small_X]
+        x_list = [0,int((b_X-small_X)/3),int((b_X-small_X)*0.66),b_X-small_X]
         y_list = [0,b_Y-small_Y]
         
         for x in x_list:
@@ -243,9 +243,11 @@ def output_pic(im,im_name,folder_name,show=False,save=False,wall=False):
 def process_pictures(pattern='Top-Left',show=False,save=True,lalpha=50,fr=-1,wall=False):
     
     if show:
-        print(f'Displaying {len(file_dic[source_folder_name])} image(s) using your default program.')
+        print(f'Displaying {len(file_dic[source_folder_name])} merged image(s) using your default program.')
     if save==True:
-        print(f'SAVING {len(file_dic[source_folder_name])} image(s) in folder "finishedpics"')
+        print(f'SAVING {len(file_dic[source_folder_name])} merged image(s) in folder "finishedpics"')
+        if wall:
+            print(f'SAVING Wallpaper Image in folder "finishedpics"')   
     
     #process original logo to get transparent logo
     logo_path = base_path.joinpath(logo_folder_name,source_logo)
@@ -408,7 +410,6 @@ def choose_logo():
         #populate file dictionary for all folders
         populate_filenames(file_dic,folders_required,image_types)
 
-        print(f'len(file_dic(logo_folder_name) = {len(file_dic[logo_folder_name])}')
         
         source_logo = select_from_list(file_dic[logo_folder_name],'Choose a logo ')
         
@@ -436,6 +437,8 @@ def choose_logo():
                     done = True
             except:
                 done = True
+        else:
+            done = True
 
     return source_logo
 
