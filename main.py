@@ -30,7 +30,7 @@ def get_cords(pattern_id, slogosize, background_size):
     elif pattern_id in ['Center','Center-MAX','Center-HALF']:
         cord_list = [((b_halfX-small_halfX),(b_halfY-small_halfY))]
     elif pattern_id == 'Center-Right':
-        cord_list = [((b_Y-small_X),(b_halfY-small_halfY))]   
+        cord_list = [((b_X-small_X),(b_halfY-small_halfY))]   
     elif pattern_id == 'Bottom-Left':
         cord_list = [(0,(b_Y-small_Y))]    
     elif pattern_id == 'Bottom-Middle':
@@ -57,6 +57,8 @@ def get_cords(pattern_id, slogosize, background_size):
         x_list = [0,int(3*b_X/8-small_halfX),int(5*b_X/8-small_halfX),b_X-small_X]
         y_list = [int(3*b_Y/8-small_halfY),int(5*b_Y/8-small_halfY)]
         
+        cord_list = get_cords('4x4ring',slogosize,background_size)
+
         for x in x_list:
             for y in y_list:
                 cord_list.append((x,y))
@@ -266,9 +268,9 @@ def process_pictures(pattern='Top-Left',show=False,save=True,lalpha=50,fr=-1,wal
 
         output_pic(final_pic,item,'finishedpics',show,save)
         
-    #process Wallpaper if selected (500,500) size is default
+    #process Wallpaper if selected (960,540) size is default
     if wall:
-        wallimage=final_background(logo,(500,500),pattern,force_ratio=user_options[5])
+        wallimage=final_background(logo,(960,540),pattern,force_ratio=user_options[5])
         output_pic(wallimage,source_logo,'finishedpics',show,save,wall=True)
         
 def construct_pattern_dic():
