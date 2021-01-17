@@ -56,28 +56,29 @@ def get_cords(pattern_id, slogosize, background_size):
             cord_list.extend(get_cords(item, slogosize, background_size))
     elif pattern_id == '4x4full':
 
-        x_list = ([0, int((b_X-small_X)/3),
-                   int((b_X-small_X)*0.66), b_X-small_X])
-        y_list = [int(3*b_Y/8-small_halfY), int(5*b_Y/8-small_halfY)]
-
-        cord_list = get_cords('4x4ring', slogosize, background_size)
+        x_list = ([0, int(small_X + (b_X-4*small_X)/3),
+                  int(b_X-2*small_X - (b_X-4*small_X)/3), b_X-small_X])
+        y_list = ([0, int(small_Y + (b_Y-4*small_Y)/3),
+                  int(b_Y-2*small_Y - (b_Y-4*small_Y)/3), b_Y-small_Y])
 
         for x in x_list:
             for y in y_list:
                 cord_list.append((x, y))
 
     elif pattern_id == '4x4ring':
-        # Top-Bottom rows
-        x_list = ([0, int((b_X-small_X)/3),
-                  int((b_X-small_X)*0.66), b_X-small_X])
-        y_list = [0, b_Y-small_Y]
+        # Top-Bottom Rows
+        x_list = ([0, int(small_X + (b_X-4*small_X)/3),
+                  int(b_X-2*small_X - (b_X-4*small_X)/3), b_X-small_X])
+        y_list = ([0, b_Y-small_Y])
 
         for x in x_list:
             for y in y_list:
                 cord_list.append((x, y))
-        # Middle two Y rows
-        x_list = [0, b_X-small_X]
-        y_list = [int(3*b_Y/8-small_halfY), int(5*b_Y/8-small_halfY)]
+
+        # Middle Two Rows
+        x_list = ([0, b_X-small_X])
+        y_list = ([int(small_Y + (b_Y-4*small_Y)/3),
+                  int(b_Y-2*small_Y - (b_Y-4*small_Y)/3)])
 
         for x in x_list:
             for y in y_list:
@@ -236,17 +237,12 @@ def output_pic(im, im_name, folder_name, show=False, save=False, wall=False):
         im.show()
     if save:
         print(f'Saving File :\t{f_path}')
-
-        # RGBA need to be converted to RGB type for .jpg
-        if name_parts[1] == 'jpg' and wall is False:
-            im = im.convert('RGB')
-
         im.save(f_path)
 
 
 def process_pictures(pattern='Top-Left', show=False, save=True, lalpha=50,
                      fr=-1, wall=False):
-
+    RGBmode = False
     if show:
         print(f'Displaying {len(file_dic[source_folder_name])} '
               f'merged image(s) using your default program.')
@@ -262,19 +258,21 @@ def process_pictures(pattern='Top-Left', show=False, save=True, lalpha=50,
     logo = make_transparent(logo, lalpha)
 
     for item in file_dic[source_folder_name]:
-
+        RGBmode = False
         orig_path = base_path.joinpath(source_folder_name, item)
         orig_pic = Image.open(orig_path)
 
-        # add alpha in case original is type RGB
-        orig_pic.convert('RGBA')
-        orig_pic.putalpha(255)
+        if orig_pic.mode in ['RGB', 'P', '1', 'L']:
+            RGBmode = True
+            orig_pic = orig_pic.convert("RGBA")
 
         logo_sheet = final_background(logo, orig_pic.size, pattern,
                                       force_ratio=user_options[5])
-        logo_sheet.convert('RGBA')
 
         final_pic = Image.alpha_composite(orig_pic, logo_sheet)
+
+        if RGBmode:
+            final_pic = final_pic.convert('RGB')
 
         output_pic(final_pic, item, 'finishedpics', show, save)
 
@@ -479,7 +477,7 @@ def choose_logo():
 # MAiN
 base_path = Path.cwd()
 folders_required = ['logos', 'originalpics', 'finishedpics']
-image_types = ['jpg', 'png', 'bmp']
+image_types = ['jpg', 'png', 'bmp', 'gif']
 file_dic = {}
 default_options = ['Top-Left', 50, False, False, True, -1]
 user_options = []
