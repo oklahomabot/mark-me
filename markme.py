@@ -481,6 +481,7 @@ image_types = ['jpg', 'png', 'bmp', 'gif']
 file_dic = {}
 default_options = ['Top-Left', 50, False, False, True, -1]
 user_options = []
+choice = ''
 
 pattern_dic = construct_pattern_dic()
 
@@ -492,19 +493,24 @@ source_folder_name = 'originalpics'
 logo_folder_name = 'logos'
 
 # MAIN
-get_files(file_dic, folders_required, image_types)
-
 while keep_going:
-
+    get_files(file_dic, folders_required, image_types)
     source_logo = choose_logo()
     if source_logo in ['EMPTY', 'CANCEL']:
         keep_going = False
     else:
         user_options = get_user_options(user_options)
 
-        process_pictures(pattern=user_options[0], show=user_options[3],
-                         save=user_options[4], lalpha=user_options[1],
-                         fr=user_options[5], wall=user_options[2])
+        # Verify User Continue if 0 files in 'originalpics'
+        if (len(file_dic[source_folder_name]) != 0 or
+           user_options[2] is True):
+
+            process_pictures(pattern=user_options[0], show=user_options[3],
+                             save=user_options[4], lalpha=user_options[1],
+                             fr=user_options[5], wall=user_options[2])
+
+        else:
+            print(f'You have no images to process in {source_folder_name}')
 
         choice = input('Make more images? ')
         try:
