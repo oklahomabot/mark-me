@@ -190,6 +190,7 @@ def select_from_list(my_list, description='Enter the item number '):
     Returns value of the item the user selects
     If there is only one item it is chosen
     'CANCEL' is returned if user cancels, 'EMPTY' if the list is empty
+    List items displayed in two columns if more than 5 items
     '''
 
     choice = ''
@@ -200,8 +201,21 @@ def select_from_list(my_list, description='Enter the item number '):
     elif length == 1:
         return my_list[0]
     else:
-        for index, item in enumerate(my_list):
-            print(f'({index+1}) {item}')
+        if length > 5:
+            # Two Column Output
+            temp_row = ''
+            rows = int(length/2+0.5)
+            for row_num in range(rows):
+                temp_row = (f'({row_num + 1:02}) {my_list[row_num]}').ljust(30)
+                # add second column if there is one
+                if row_num + rows < length:
+                    temp_row = (temp_row + f'({row_num + rows + 1:02}) ' +
+                                f'{my_list[row_num + rows]}').ljust(30)
+                print(temp_row)
+        else:
+            for index, item in enumerate(my_list):
+                print(f'({index+1:02}) {item}')
+
         while choice not in range(length+1):
             try:
                 print(f'{description} (0 to cancel)', end=' ')
